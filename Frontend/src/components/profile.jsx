@@ -31,6 +31,11 @@ function Profile() {
       console.error("Error logging out:", error.message);
     }
   }
+
+  async function handledata() {
+    
+    window.location.href = "/textextractor";
+  }
   return (
     <div>
       {userDetails ? (
@@ -51,6 +56,8 @@ function Profile() {
           <button className="btn btn-primary" onClick={handleLogout}>
             Logout
           </button>
+
+          <button className="get_text" onClick={handledata}></button>
         </>
       ) : (
         <p>Loading...</p>

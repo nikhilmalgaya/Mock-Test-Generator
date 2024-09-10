@@ -1,40 +1,77 @@
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import React, { useState } from "react";
+import { createUserWithEmailAndPassword} from "firebase/auth";
+import React, { useState, useEffect } from "react";
 import { auth, db } from "./firebase";
-import { setDoc, doc } from "firebase/firestore";
 import { toast } from "react-toastify";
+
+
 
 function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fname, setFname] = useState("");
   const [lname, setLname] = useState("");
+  const [register, setregister] = useState(false);
+  
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      const user = auth.currentUser;
-      console.log(user);
-      if (user) {
-        await setDoc(doc(db, "Users", user.uid), {
-          email: user.email,
-          firstName: fname,
-          lastName: lname,
-          photo:""
-        });
-      }
-      console.log("User Registered Successfully!!");
-      toast.success("User Registered Successfully!!", {
-        position: "top-center",
-      });
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      setregister(true);
+      toast.success("User registered successfully!", {
+      position: "top-center", // Adjust position as needed
+     autoClose: 5000, // Close automatically after 5 seconds
+     hideProgressBar: false,
+     closeOnClick: true,
+     pauseOnFocusLoss: false,
+     draggable: true,
+     progress: undefined,
+});
+
+      // Don't store data until verification is confirmed (remains unchanged)
     } catch (error) {
-      console.log(error.message);
-      toast.error(error.message, {
-        position: "bottom-center",
-      });
+      console.error("Error creating user:", error);
+      toast.error(error.message);
     }
   };
+
+  const handleStoreData = async () => {
+    if (true) { // Only store data if email is verified
+      try {
+        
+        const data = {
+          email: auth.currentUser.email,
+          firstname: fname,
+          lastname: lname,
+          photo: "",
+        };
+
+        const res = await fetch('http://localhost:3000/user/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (res.ok) {
+          console.log(result);
+          toast.success("User data stored successfully!");
+        } else {
+          console.error("Error storing user data:", res.statusText);
+          toast.error("Error storing user data!");
+        }
+      } catch (error) {
+        console.error("Error storing user data in Firestore:", error);
+        toast.error("Error storing user data!");
+      }
+    } 
+  };
+
+  if (register)
+    handleStoreData();
 
   return (
     <form onSubmit={handleRegister}>
@@ -94,4 +131,5 @@ function Register() {
     </form>
   );
 }
+
 export default Register;

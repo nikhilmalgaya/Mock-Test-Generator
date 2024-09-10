@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
+import TextExtractor from './components/text_extracter';
 import {
   BrowserRouter as Router,
   Routes,
@@ -19,9 +20,11 @@ import { auth } from "./components/firebase";
 
 function App() {
   const [user, setUser] = useState();
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
       setUser(user);
+      setIsLoading(false);
     });
   });
   return (
@@ -34,14 +37,16 @@ function App() {
                 path="/"
                 element={user ? <Navigate to="/profile" /> : <Login />}
               />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={isLoading ? "LOADING...": user ? <Navigate to="/profile" />:<Login />} />
               <Route path="/register" element={<SignUp />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/textextractor" element={<TextExtractor />} />
             </Routes>
             <ToastContainer />
           </div>
         </div>
       </div>
+
     </Router>
   );
 }

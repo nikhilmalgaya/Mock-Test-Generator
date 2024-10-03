@@ -7,6 +7,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 
 import Login from "./components/login";
@@ -17,6 +18,8 @@ import "react-toastify/dist/ReactToastify.css";
 import Profile from "./components/profile";
 import { useState } from "react";
 import { auth } from "./components/firebase";
+import Footer from "./components/Footer";
+import HomePage from "./components/HomePage";
 
 function App() {
   const [user, setUser] = useState();
@@ -24,29 +27,23 @@ function App() {
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
       setUser(user);
+      console.log(user);
       setIsLoading(false);
     });
   });
   return (
     <Router>
-      <div className="App">
-        <div className="auth-wrapper">
-          <div className="auth-inner">
+      <div>
             <Routes>
-              <Route
-                path="/"
-                element={user ? <Navigate to="/profile" /> : <Login />}
-              />
-              <Route path="/login" element={isLoading ? "LOADING...": user ? <Navigate to="/profile" />:<Login />} />
-              <Route path="/register" element={<SignUp />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/textextractor" element={<TextExtractor />} />
+              <Route path="/" element={<HomePage />}>
+                <Route path="/login" element={isLoading ? "LOADING...": user ? <Navigate to="/profile" />:<Login />} />
+                <Route path="/register" element={<SignUp />} />
+                <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
+                <Route path="/textextractor" element={<TextExtractor />} />
+              </Route>
             </Routes>
             <ToastContainer />
-          </div>
-        </div>
       </div>
-
     </Router>
   );
 }

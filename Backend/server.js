@@ -4,12 +4,10 @@ const profile = require('./models/profile');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
-
 const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
-
 
 const PORT = 3000;
 
@@ -17,35 +15,47 @@ connectDB();
 
 app.post('/user/register', async (req, res) => {
     try {
+        const { firstname, lastname, photo, email } = req.body;
 
-        const { firstname, lastname, photo,email} = req.body;
-        
-    
-            const existingUser = await profile.findOne({ email });
-            if (existingUser) {
-                return res.status(400).json({ message: 'User already exists' });
+        console.log(firstname, lastname, photo, email);
+
+        // Instead of findOne and then insert, use findOneAndUpdate with upsert
+        const result = await profile.findOneAndUpdate(
+            { email },
+            { 
+                $setOnInsert: {
+                    firstname,
+                    lastname,
+                    photo
+                }
+            },
+            { 
+                upsert: true, 
+                runValidators: true
             }
+        );
 
-            // Create new user
-            const newUser = new profile({
-                email,
-                firstname,
-                lastname,
-                photo
-            });
+        console.log(result);
 
-            await newUser.save();
-
-            res.status(201).json({ message: 'User registered successfully!' });
-        } catch (error) {
-            console.error('Error in /user/register:', error);
-            res.status(500).send('Internal Server Error');
+        if (result == null) {
+            // Document was inserted
+            console.log("Data saved");
+            return res.status(201).json({ message: "User registered successfully" });
+        } else {
+            // Document already existed
+            return res.status(400).json({ message: "User already exists" });
         }
-    });
-
+    } catch (error) {
+        console.error('Error:', error);
+        
+        if (error.code === 11000) {
+            return res.status(400).json({ message: "Email already in use" });
+        }
+        
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
-
-

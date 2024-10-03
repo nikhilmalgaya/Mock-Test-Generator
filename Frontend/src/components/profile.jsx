@@ -3,19 +3,21 @@ import { auth, db } from "./firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 function Profile() {
-  const [userDetails, setUserDetails] = useState(null);
+  const [userDetails, setUserDetails] = useState({firstname:"",email:""});
   const fetchUserData = async () => {
     auth.onAuthStateChanged(async (user) => {
       console.log(user);
 
-      const docRef = doc(db, "Users", user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setUserDetails(docSnap.data());
-        console.log(docSnap.data());
-      } else {
-        console.log("User is not logged in");
-      }
+      // const docRef = doc(db, "Users", user.uid);
+      // const docSnap = await getDoc(docRef);
+      // if (docSnap.exists()) {
+      //   setUserDetails(docSnap.data());
+      //   console.log(docSnap.data());
+      // } else {
+      //   console.log("User is not logged in");
+      // }
+      setUserDetails({email:user.email,firstName:user.displayName});
+
     });
   };
   useEffect(() => {

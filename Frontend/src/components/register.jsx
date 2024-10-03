@@ -1,77 +1,84 @@
-import { createUserWithEmailAndPassword} from "firebase/auth";
-import React, { useState, useEffect } from "react";
-import { auth, db } from "./firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import React, { useState } from "react";
+import { auth } from "./firebase";
 import { toast } from "react-toastify";
-
-
+import { useNavigate } from "react-router-dom";
 
 function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fname, setFname] = useState("");
-  const [lname, setLname] = useState("");
-  const [register, setregister] = useState(false);
-  
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    firstname: "",
+    lastname: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
-      setregister(true);
-      toast.success("User registered successfully!", {
-      position: "top-center", // Adjust position as needed
-     autoClose: 5000, // Close automatically after 5 seconds
-     hideProgressBar: false,
-     closeOnClick: true,
-     pauseOnFocusLoss: false,
-     draggable: true,
-     progress: undefined,
-});
-
-      // Don't store data until verification is confirmed (remains unchanged)
+      
+      toast.success("User registered successfully with Firebase!");
+      await handleStoreData(user.email);
+      
+      // Redirect to login page after successful registration and data storage
+      navigate("/login");
     } catch (error) {
       console.error("Error creating user:", error);
       toast.error(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleStoreData = async () => {
-    if (true) { // Only store data if email is verified
-      try {
-        
-        const data = {
-          email: auth.currentUser.email,
-          firstname: fname,
-          lastname: lname,
-          photo: "",
-        };
+  const handleStoreData = async (email) => {
+    try {
+      const data = {
+        email,
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        photo: "",
+      };
 
-        const res = await fetch('http://localhost:3000/user/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
+      const res = await fetch('http://localhost:3000/user/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-        if (res.ok) {
-          console.log(result);
-          toast.success("User data stored successfully!");
-        } else {
-          console.error("Error storing user data:", res.statusText);
-          toast.error("Error storing user data!");
-        }
-      } catch (error) {
-        console.error("Error storing user data in Firestore:", error);
-        toast.error("Error storing user data!");
+      if (res.ok) {
+        const result = await res.json();
+        console.log(result);
+        toast.success("User data stored successfully!");
+      } else {
+        const errorData = await res.json();
+        console.error("Error storing user data:", errorData);
+        toast.error(errorData.message || "Error storing user data!");
+        // If there's an error storing data, we might want to delete the Firebase user
+        // This is optional and depends on your specific requirements
+        // await user.delete();
+        throw new Error("Failed to store user data");
       }
-    } 
+    } catch (error) {
+      console.error("Error storing user data:", error);
+      toast.error("Error storing user data!");
+      throw error; // Re-throw the error to be caught in handleRegister
+    }
   };
-
-  if (register)
-    handleStoreData();
 
   return (
     <form onSubmit={handleRegister}>
@@ -83,7 +90,9 @@ function Register() {
           type="text"
           className="form-control"
           placeholder="First name"
-          onChange={(e) => setFname(e.target.value)}
+          name="firstname"
+          value={formData.firstname}
+          onChange={handleChange}
           required
         />
       </div>
@@ -94,7 +103,9 @@ function Register() {
           type="text"
           className="form-control"
           placeholder="Last name"
-          onChange={(e) => setLname(e.target.value)}
+          name="lastname"
+          value={formData.lastname}
+          onChange={handleChange}
         />
       </div>
 
@@ -104,7 +115,9 @@ function Register() {
           type="email"
           className="form-control"
           placeholder="Enter email"
-          onChange={(e) => setEmail(e.target.value)}
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
           required
         />
       </div>
@@ -115,14 +128,16 @@ function Register() {
           type="password"
           className="form-control"
           placeholder="Enter password"
-          onChange={(e) => setPassword(e.target.value)}
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
           required
         />
       </div>
 
       <div className="d-grid">
-        <button type="submit" className="btn btn-primary">
-          Sign Up
+        <button type="submit" className="btn btn-primary" disabled={isLoading}>
+          {isLoading ? 'Signing Up...' : 'Sign Up'}
         </button>
       </div>
       <p className="forgot-password text-right">
